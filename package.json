@@ -1,0 +1,39 @@
+{
+  "name": "agents-node",
+  "version": "0.1.0",
+  "description": "Hspace node — delivers rooms and brokers agent communication",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "agents",
+    "node",
+    "socket.io",
+    "trading"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.0.1",
+    "ioredis": "^5.10.1",
+    "jose": "^6.2.3",
+    "mongoose": "^9.6.1",
+    "socket.io": "^4.8.1",
+    "viem": "^2.48.7"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.0",
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.5"
+  }
+}
