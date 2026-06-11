@@ -1,5 +1,5 @@
 import "dotenv/config";
-import type { Room, Market, Provider, Platform, NodeDefaults } from "./types.js";
+import type { Room, Market, Provider, Platform, NodeDefaults, Strategy } from "./types.js";
 
 const envBool = (v: string | undefined, def: boolean): boolean =>
   v === undefined ? def : v.toLowerCase() === "true";
@@ -39,17 +39,10 @@ const rooms: Room[] = markets.flatMap((m) =>
 
 const providers: Provider[] = [
   {
-    id: "0G",
-    label: "0G",
-    models: [
-      "zai-org/GLM-5-FP8",
-      "qwen3.6-plus",
-      "qwen/qwen3-vl-30b-a3b-instruct",
-      "deepseek/deepseek-chat-v3-0324",
-      "openai/gpt-5.4-mini",
-      "zai-org/GLM-5.1-FP8",
-    ],
-    defaultModel: "zai-org/GLM-5-FP8",
+    id: "z.ai",
+    label: "z.ai",
+    models: ["glm-5.1", "glm-5", "glm-4.6", "glm-4.5-air"],
+    defaultModel: "glm-5.1",
   },
   {
     id: "OpenAI",
@@ -65,12 +58,73 @@ const providers: Provider[] = [
   },
 ];
 
-const platforms: Platform[] = [{ id: "Hyperliquid", label: "Hyperliquid" }];
+const platforms: Platform[] = [{ id: "Bybit", label: "Bybit" }];
+
+const strategies: Strategy[] = [
+  {
+    id: "always-long",
+    label: "Always LONG",
+    body: [
+      "# Always LONG",
+      "",
+      "Testing strategy — always vote LONG.",
+      "",
+      "Rules:",
+      "- On every final vote, set way to LONG.",
+      "- Set sizeUsd to your full spending cap (maximum conviction).",
+      "- Ignore discussion that suggests otherwise.",
+    ].join("\n"),
+  },
+  {
+    id: "always-short",
+    label: "Always SHORT",
+    body: [
+      "# Always SHORT",
+      "",
+      "Testing strategy — always vote SHORT.",
+      "",
+      "Rules:",
+      "- On every final vote, set way to SHORT.",
+      "- Set sizeUsd to your full spending cap (maximum conviction).",
+      "- Ignore discussion that suggests otherwise.",
+    ].join("\n"),
+  },
+  {
+    id: "always-notr",
+    label: "Always NOTR",
+    body: [
+      "# Always NOTR",
+      "",
+      "Testing strategy — never trade.",
+      "",
+      "Rules:",
+      "- On every final vote, set way to NOTR.",
+      "- Always set sizeUsd to 0.",
+      "- Do not open or adjust positions.",
+    ].join("\n"),
+  },
+];
+
+const INTERVAL_MS: Record<string, number> = {
+  "1m": 60_000,
+  "5m": 5 * 60_000,
+  "15m": 15 * 60_000,
+  "30m": 30 * 60_000,
+  "1h": 60 * 60_000,
+  "4h": 4 * 60 * 60_000,
+  "12h": 12 * 60 * 60_000,
+  "1d": 24 * 60 * 60_000,
+  "1w": 7 * 24 * 60 * 60_000,
+};
+
+export function intervalToMs(interval: string): number | null {
+  return INTERVAL_MS[interval] ?? null;
+}
 
 const defaults: NodeDefaults = {
-  provider: "0G",
-  model: "zai-org/GLM-5-FP8",
-  platform: "Hyperliquid",
+  provider: "z.ai",
+  model: "glm-5.1",
+  platform: "Bybit",
 };
 
 export const config = {
@@ -95,12 +149,40 @@ export const config = {
   get sessionTtlMs(): number {
     return envNumber(process.env.SESSION_TTL_MS, 24 * 60 * 60_000);
   },
+  get discussionsEnabled(): boolean {
+    return envBool(process.env.DISCUSSIONS_ENABLED, true);
+  },
+  get discussionRounds(): number {
+    return envNumber(process.env.DISCUSSION_ROUNDS, 2);
+  },
+  get discussionMaxParticipants(): number {
+    return envNumber(process.env.DISCUSSION_MAX_PARTICIPANTS, 16);
+  },
+  get discussionVoteTimeoutMs(): number {
+    return envNumber(process.env.DISCUSSION_VOTE_TIMEOUT_MS, 30_000);
+  },
+  get discussionTurnTimeoutMs(): number {
+    return envNumber(process.env.DISCUSSION_TURN_TIMEOUT_MS, 45_000);
+  },
+  get excellenceScoreDelta(): number {
+    return envNumber(process.env.EXCELLENCE_SCORE_DELTA, 0.05);
+  },
+  get excellenceFlatThresholdPct(): number {
+    return envNumber(process.env.EXCELLENCE_FLAT_THRESHOLD_PCT, 0.05);
+  },
+  get excellenceReferenceUsd(): number {
+    return envNumber(process.env.EXCELLENCE_REFERENCE_USD, 50);
+  },
+  get matchmakingEpsilon(): number {
+    return envNumber(process.env.MATCHMAKING_EPSILON, 0.1);
+  },
 
   rooms,
   markets,
   intervals,
   providers,
   platforms,
+  strategies,
   defaults,
 };
 

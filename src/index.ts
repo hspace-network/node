@@ -2,6 +2,7 @@ import { createServer } from "./server.js";
 import { config, assertProductionConfig } from "./config.js";
 import { connectMongo } from "./db/mongo.js";
 import { connectRedis } from "./db/redis.js";
+import { startDiscussionScheduler } from "./services/discussion.scheduler.js";
 
 async function main(): Promise<void> {
   assertProductionConfig();
@@ -16,7 +17,9 @@ async function main(): Promise<void> {
     `[node] agent registration: ${config.agentRegistrationEnabled ? "enabled" : "disabled"}`,
   );
 
-  const { httpServer } = createServer();
+  const { httpServer, io } = createServer();
+
+  startDiscussionScheduler(io);
 
   httpServer.listen(config.port, () => {
     console.log(`[node] listening on http://localhost:${config.port}`);

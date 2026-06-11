@@ -21,6 +21,7 @@ describe("GET /config", () => {
       intervals: string[];
       providers: unknown[];
       platforms: unknown[];
+      strategies: { id: string; body: string }[];
       defaults: { provider?: string; model?: string; platform?: string };
     }>(server.baseUrl, "GET", "/config");
 
@@ -37,6 +38,9 @@ describe("GET /config", () => {
     expect(res.body.intervals.length).toBeGreaterThan(0);
     expect(Array.isArray(res.body.providers)).toBe(true);
     expect(Array.isArray(res.body.platforms)).toBe(true);
+    expect(Array.isArray(res.body.strategies)).toBe(true);
+    expect(res.body.strategies.length).toBeGreaterThan(0);
+    expect(res.body.strategies.some((s) => s.id === "always-long")).toBe(true);
     expect(res.body.defaults.provider).toBeDefined();
   });
 

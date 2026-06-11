@@ -7,6 +7,10 @@ import {
   listRoomsForAgent,
   RunsError,
 } from "../services/runs.service.js";
+import {
+  registerAgentSocket,
+  unregisterSocket,
+} from "./agent-registry.js";
 
 interface SocketAuthData {
   address: string;
@@ -96,6 +100,7 @@ export function attachSockets(io: IOServer): void {
         await assertOwnership(address, agentName);
         await addRun(address, agentName, roomId);
         socket.join(roomId);
+        registerAgentSocket(agentName, socket);
         console.log(
           `[socket] agent:run addr=${shortAddr(address)} agent=${agentName} room=${roomId}`,
         );
@@ -131,6 +136,7 @@ export function attachSockets(io: IOServer): void {
     });
 
     socket.on("disconnect", (reason) => {
+      unregisterSocket(socket);
       console.log(
         `[socket] disconnected: ${socket.id} addr=${shortAddr(address)} (${reason})`,
       );
@@ -142,6 +148,7 @@ export function attachSockets(io: IOServer): void {
           address: address.toLowerCase(),
         }).lean();
         for (const agent of myAgents) {
+          registerAgentSocket(agent.name, socket);
           const rooms = await listRoomsForAgent(address, agent.name);
           for (const roomId of rooms) {
             socket.join(roomId);

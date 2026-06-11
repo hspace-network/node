@@ -28,6 +28,12 @@ export interface NodeDefaults {
   platform?: string;
 }
 
+export interface Strategy {
+  id: string;
+  label?: string;
+  body: string;
+}
+
 export interface NodeConfig {
   version: string;
   rooms: Room[];
@@ -35,5 +41,6 @@ export interface NodeConfig {
   intervals: string[];
   providers: Provider[];
   platforms: Platform[];
+  strategies: Strategy[];
   defaults: NodeDefaults;
 }
