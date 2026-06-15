@@ -42,6 +42,21 @@ export function isAgentOnline(agentName: string): boolean {
 }
 
 /**
+ * Whether the agent has a live socket currently joined to a SPECIFIC room.
+ * This is per-room (unlike isAgentOnline, which is global): an agent only counts
+ * for a room when a connected socket actually holds that room, so stale Redis
+ * membership or orphaned discussion sessions for other rooms never light it up.
+ */
+export function isAgentInRoom(agentName: string, roomId: string): boolean {
+  const set = agentSockets.get(agentName);
+  if (!set) return false;
+  for (const socket of set) {
+    if (socket.connected && socket.rooms.has(roomId)) return true;
+  }
+  return false;
+}
+
+/**
  * Ask a specific agent's CLI to do work (author a vote or a turn) and wait for
  * its acknowledgement. Returns null when the agent has no live socket or fails
  * to respond in time, so the orchestrator can treat it as an abstain.

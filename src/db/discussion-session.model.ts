@@ -14,6 +14,9 @@ const DiscussionSessionSchema = new Schema(
     rounds: { type: Number, default: 0 },
     startedAt: { type: Date, default: Date.now },
     closedAt: { type: Date, default: null },
+    priceP0: { type: Number, default: null },
+    priceP1: { type: Number, default: null },
+    priceMove: { type: String, default: null },
   },
   { timestamps: false },
 );

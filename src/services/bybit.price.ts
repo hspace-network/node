@@ -1,3 +1,5 @@
+import { intervalToMs, intervalToBybitKline } from "../config.js";
+
 export type PriceMove = "up" | "down" | "flat";
 
 interface KlineResult {
@@ -6,17 +8,34 @@ interface KlineResult {
 
 const BYBIT_MAINNET = "https://api.bybit.com";
 
+function lookbackMs(roomInterval: string): number {
+  const ms = intervalToMs(roomInterval);
+  if (ms && ms > 0) return ms;
+  return 60_000;
+}
+
 /**
- * Fetch the 1m candle close price nearest to `atMs` for a linear symbol.
+ * Fetch the candle close price nearest to `atMs` for a linear symbol.
+ * Uses the room interval's Bybit kline granularity (1m → "1", 4h → "240", etc.).
  */
-export async function getClosePrice(symbol: string, atMs: number): Promise<number> {
-  const start = atMs - 60_000;
+export async function getClosePrice(
+  symbol: string,
+  atMs: number,
+  roomInterval: string,
+): Promise<number> {
+  const klineInterval = intervalToBybitKline(roomInterval);
+  if (!klineInterval) {
+    throw new Error(`Unknown room interval "${roomInterval}" for price fetch`);
+  }
+
+  const back = lookbackMs(roomInterval);
+  const start = atMs - back;
   const url = new URL(`${BYBIT_MAINNET}/v5/market/kline`);
   url.searchParams.set("category", "linear");
   url.searchParams.set("symbol", symbol);
-  url.searchParams.set("interval", "1");
+  url.searchParams.set("interval", klineInterval);
   url.searchParams.set("start", String(start));
-  url.searchParams.set("limit", "2");
+  url.searchParams.set("limit", "3");
 
   const res = await fetch(url, { signal: AbortSignal.timeout(10_000) });
   if (!res.ok) {
@@ -38,7 +57,6 @@ export async function getClosePrice(symbol: string, atMs: number): Promise<numbe
     throw new Error(`No kline data for ${symbol} at ${new Date(atMs).toISOString()}`);
   }
 
-  // Bybit returns newest first; pick the candle whose open time is closest to atMs.
   let bestClose = Number(rows[0]![4]);
   let bestDist = Infinity;
   for (const row of rows) {

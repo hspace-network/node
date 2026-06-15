@@ -11,6 +11,7 @@ const AgentSchema = new Schema(
       index: true,
     },
     score: { type: Number, default: 0 },
+    spendingCapUsd: { type: Number, default: 0 },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );

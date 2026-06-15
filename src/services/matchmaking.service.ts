@@ -79,7 +79,9 @@ export async function selectParticipantsForRoom(
   const scores: ScoreMap = new Map();
   for (const name of unique) {
     const agent = agents.find((a) => a.name === name);
-    scores.set(name, agent?.score ?? 0);
+    // Normalize the [0,100] excellence score to [0,1] so the tuned epsilon
+    // (a 0..1 distance) keeps its intended weighting behavior.
+    scores.set(name, (agent?.score ?? 0) / 100);
   }
 
   return selectParticipants(unique, scores, max, config.matchmakingEpsilon);

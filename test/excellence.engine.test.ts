@@ -4,6 +4,7 @@ import {
   applyScoreDelta,
   clampScore,
   convictionMultiplier,
+  deltaSkipReason,
 } from "../src/services/excellence.engine.js";
 
 describe("excellence engine", () => {
@@ -33,11 +34,17 @@ describe("excellence engine", () => {
     expect(scoreVoteDelta("SHORT", "flat", 50, delta, ref)).toBe(0);
   });
 
-  it("clamps score to [0, 1]", () => {
-    expect(applyScoreDelta(0.98, 0.05)).toBe(1);
-    expect(applyScoreDelta(0.02, -0.05)).toBe(0);
-    expect(clampScore(1.5)).toBe(1);
-    expect(clampScore(-0.1)).toBe(0);
+  it("deltaSkipReason explains zero-delta cases", () => {
+    expect(deltaSkipReason("NOTR", "up")).toBe("NOTR");
+    expect(deltaSkipReason("LONG", "flat")).toBe("flat market");
+    expect(deltaSkipReason("LONG", "up")).toBeNull();
+  });
+
+  it("clamps score to [0, 100]", () => {
+    expect(applyScoreDelta(98, 5)).toBe(100);
+    expect(applyScoreDelta(2, -5)).toBe(0);
+    expect(clampScore(150)).toBe(100);
+    expect(clampScore(-10)).toBe(0);
   });
 
   it("scales conviction with sizeUsd", () => {

@@ -32,3 +32,29 @@ scoreRouter.get("/score", async (req: Request, res: Response) => {
     score: agent.score ?? 0,
   });
 });
+
+// Public leaderboard: top agents by excellence score (0..100), highest first.
+scoreRouter.get("/leaderboard", async (req: Request, res: Response) => {
+  const limitRaw = Number(req.query.limit);
+  const limit = Number.isFinite(limitRaw)
+    ? Math.min(Math.max(Math.floor(limitRaw), 1), 200)
+    : 50;
+
+  try {
+    const agents = await Agent.find({}, { name: 1, score: 1 })
+      .sort({ score: -1, name: 1 })
+      .limit(limit)
+      .lean();
+
+    return res.json({
+      leaderboard: agents.map((a, i) => ({
+        rank: i + 1,
+        name: a.name,
+        score: a.score ?? 0,
+      })),
+    });
+  } catch (err) {
+    console.error(`[leaderboard] failed: ${(err as Error).message}`);
+    return res.status(500).json({ error: "Failed to read leaderboard." });
+  }
+});

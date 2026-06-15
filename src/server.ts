@@ -13,6 +13,9 @@ export interface NodeServer {
 
 export function createServer(): NodeServer {
   const app = express();
+  // Trust the first proxy hop so per-IP rate limiting sees the real client IP
+  // (X-Forwarded-For) when deployed behind a load balancer / reverse proxy.
+  app.set("trust proxy", 1);
   app.use(cors());
   app.use(express.json());
 

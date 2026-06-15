@@ -121,6 +121,23 @@ export function intervalToMs(interval: string): number | null {
   return INTERVAL_MS[interval] ?? null;
 }
 
+const INTERVAL_BYBIT_KLINE: Record<string, string> = {
+  "1m": "1",
+  "5m": "5",
+  "15m": "15",
+  "30m": "30",
+  "1h": "60",
+  "4h": "240",
+  "12h": "720",
+  "1d": "D",
+  "1w": "W",
+};
+
+/** Bybit v5 kline interval param for a room interval label. */
+export function intervalToBybitKline(interval: string): string | null {
+  return INTERVAL_BYBIT_KLINE[interval] ?? null;
+}
+
 const defaults: NodeDefaults = {
   provider: "z.ai",
   model: "glm-5.1",
@@ -129,7 +146,7 @@ const defaults: NodeDefaults = {
 
 export const config = {
   get port(): number {
-    return envNumber(process.env.PORT, 3000);
+    return envNumber(process.env.PORT, 6161);
   },
   get mongodbUri(): string {
     return process.env.MONGODB_URI ?? "mongodb://localhost:27017/hspace";
@@ -164,8 +181,10 @@ export const config = {
   get discussionTurnTimeoutMs(): number {
     return envNumber(process.env.DISCUSSION_TURN_TIMEOUT_MS, 45_000);
   },
+  // Base score move per correct/incorrect call, on the [0,100] excellence scale
+  // (multiplied by the conviction factor 0.5..1).
   get excellenceScoreDelta(): number {
-    return envNumber(process.env.EXCELLENCE_SCORE_DELTA, 0.05);
+    return envNumber(process.env.EXCELLENCE_SCORE_DELTA, 5);
   },
   get excellenceFlatThresholdPct(): number {
     return envNumber(process.env.EXCELLENCE_FLAT_THRESHOLD_PCT, 0.05);
@@ -175,6 +194,49 @@ export const config = {
   },
   get matchmakingEpsilon(): number {
     return envNumber(process.env.MATCHMAKING_EPSILON, 0.1);
+  },
+  get anchorEnabled(): boolean {
+    return envBool(process.env.ANCHOR_ENABLED, false);
+  },
+  /** Operator wallet for hourly on-chain session anchors (Mantle gas). */
+  get anchorPrivateKey(): string {
+    return process.env.ANCHOR_PRIVATE_KEY ?? "";
+  },
+  get anchorContractAddress(): string {
+    return process.env.ANCHOR_CONTRACT_ADDRESS ?? "";
+  },
+  get anchorRpcUrl(): string {
+    return process.env.ANCHOR_RPC_URL ?? "https://rpc.mantle.xyz";
+  },
+
+  // --- Gasless onboarding: operator-sponsored Mantle gas drip for new agents.
+  get gasSponsorEnabled(): boolean {
+    return envBool(process.env.GAS_SPONSOR_ENABLED, false);
+  },
+  /** Operator wallet that pays the onboarding gas drip (falls back to the anchor wallet). */
+  get gasSponsorPrivateKey(): string {
+    return process.env.GAS_SPONSOR_PRIVATE_KEY ?? process.env.ANCHOR_PRIVATE_KEY ?? "";
+  },
+  get gasSponsorChain(): "mantle" | "mantle-sepolia" {
+    return process.env.GAS_SPONSOR_CHAIN === "mantle-sepolia" ? "mantle-sepolia" : "mantle";
+  },
+  get gasSponsorRpcUrl(): string {
+    if (process.env.GAS_SPONSOR_RPC_URL) return process.env.GAS_SPONSOR_RPC_URL;
+    return process.env.GAS_SPONSOR_CHAIN === "mantle-sepolia"
+      ? "https://rpc.sepolia.mantle.xyz"
+      : "https://rpc.mantle.xyz";
+  },
+  /** MNT sent to each new agent wallet so it can pay its own deposit gas. */
+  get gasSponsorAmountMnt(): string {
+    return process.env.GAS_SPONSOR_AMOUNT_MNT ?? "0.05";
+  },
+  /** Global anti-abuse cap on total MNT sponsored per rolling 24h. */
+  get gasSponsorDailyBudgetMnt(): string {
+    return process.env.GAS_SPONSOR_DAILY_BUDGET_MNT ?? "5";
+  },
+  /** Skip the drip if the recipient already holds at least this much MNT. */
+  get gasSponsorMinBalanceMnt(): string {
+    return process.env.GAS_SPONSOR_MIN_BALANCE_MNT ?? "0.05";
   },
 
   rooms,

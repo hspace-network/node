@@ -14,6 +14,8 @@ import {
 
 interface SocketAuthData {
   address: string;
+  /** Runs this socket started (agentName|roomId), removed on disconnect. */
+  runs?: Set<string>;
 }
 
 interface RunPayload {
@@ -33,6 +35,10 @@ function getAuth(socket: Socket): SocketAuthData {
 
 function shortAddr(address: string): string {
   return `${address.slice(0, 6)}...`;
+}
+
+function runKey(agentName: string, roomId: string): string {
+  return `${agentName}|${roomId}`;
 }
 
 function parseRunPayload(payload: unknown): {
@@ -101,6 +107,7 @@ export function attachSockets(io: IOServer): void {
         await addRun(address, agentName, roomId);
         socket.join(roomId);
         registerAgentSocket(agentName, socket);
+        (socket.data.runs ??= new Set<string>()).add(runKey(agentName, roomId));
         console.log(
           `[socket] agent:run addr=${shortAddr(address)} agent=${agentName} room=${roomId}`,
         );
@@ -121,6 +128,7 @@ export function attachSockets(io: IOServer): void {
         await assertOwnership(address, agentName);
         await removeRun(address, agentName, roomId);
         socket.leave(roomId);
+        socket.data.runs?.delete(runKey(agentName, roomId));
         console.log(
           `[socket] agent:stop addr=${shortAddr(address)} agent=${agentName} room=${roomId}`,
         );
@@ -137,6 +145,21 @@ export function attachSockets(io: IOServer): void {
 
     socket.on("disconnect", (reason) => {
       unregisterSocket(socket);
+      // Ephemeral runs: clear what this socket started so a closed CLI goes idle.
+      const tracked = (socket.data as Partial<SocketAuthData>).runs;
+      if (tracked && tracked.size > 0) {
+        void (async () => {
+          for (const entry of tracked) {
+            const [agentName, roomId] = entry.split("|");
+            if (!agentName || !roomId) continue;
+            try {
+              await removeRun(address, agentName, roomId);
+            } catch {
+              // best-effort cleanup on disconnect
+            }
+          }
+        })();
+      }
       console.log(
         `[socket] disconnected: ${socket.id} addr=${shortAddr(address)} (${reason})`,
       );

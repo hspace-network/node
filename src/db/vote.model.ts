@@ -20,6 +20,7 @@ const VoteSchema = new Schema(
     },
     rationale: { type: String, default: "" },
     sizeUsd: { type: Number, default: 0 },
+    responded: { type: Boolean, default: true },
     ts: { type: Date, default: Date.now },
   },
   { timestamps: false },
