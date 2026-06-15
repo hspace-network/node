@@ -1,5 +1,5 @@
 {
-  "name": "agents-node",
+  "name": "hspace-node",
   "version": "0.1.0",
   "description": "Hspace node — delivers rooms and brokers agent communication",
   "type": "module",
@@ -12,7 +12,7 @@
     "test:watch": "vitest"
   },
   "keywords": [
-    "agents",
+    "hspace",
     "node",
     "socket.io",
     "trading"
