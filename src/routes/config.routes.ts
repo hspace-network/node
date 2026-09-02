@@ -13,6 +13,7 @@ configRouter.get("/config", (_req, res) => {
     providers: config.providers,
     platforms: config.platforms,
     strategies: config.strategies,
+    chains: config.chains,
     defaults: config.defaults,
   };
   res.json(payload);

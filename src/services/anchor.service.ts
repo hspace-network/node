@@ -1,7 +1,20 @@
 import { keccak256, encodeAbiParameters, toBytes } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { createWalletClient, http } from "viem";
-import { mantle } from "viem/chains";
+import { mantle, mantleSepoliaTestnet, base, baseSepolia } from "viem/chains";
+
+function anchorChainInfo() {
+  switch (config.anchorChain) {
+    case "base":
+      return { chain: base, chainId: 8453, explorer: "https://basescan.org" };
+    case "base-sepolia":
+      return { chain: baseSepolia, chainId: 84532, explorer: "https://sepolia.basescan.org" };
+    case "mantle-sepolia":
+      return { chain: mantleSepoliaTestnet, chainId: 5003, explorer: "https://explorer.sepolia.mantle.xyz" };
+    default:
+      return { chain: mantle, chainId: 5000, explorer: "https://explorer.mantle.xyz" };
+  }
+}
 import { config } from "../config.js";
 import { AnchorPending } from "../db/anchor-pending.model.js";
 import { AnchorHour } from "../db/anchor-hour.model.js";
@@ -204,10 +217,11 @@ export async function anchorHourBucket(hourBucket: string): Promise<void> {
   const hourlyRoot = merkleRoot(roots);
   const hourKey = hourBucketToBytes32(hourBucket);
 
+  const { chain } = anchorChainInfo();
   const account = privateKeyToAccount(config.anchorPrivateKey as `0x${string}`);
   const client = createWalletClient({
     account,
-    chain: mantle,
+    chain,
     transport: http(config.anchorRpcUrl),
   });
 
@@ -218,7 +232,7 @@ export async function anchorHourBucket(hourBucket: string): Promise<void> {
       abi: ANCHOR_ABI,
       functionName: "anchorHour",
       args: [hourKey, hourlyRoot, BigInt(pending.length)],
-      chain: mantle,
+      chain,
     });
   } catch (err) {
     console.error(
@@ -355,7 +369,7 @@ export async function getSessionVerification(
     txHash,
     sessionCount,
     contractAddress: config.anchorContractAddress || null,
-    chainId: 5000,
-    explorerTxUrl: txHash ? `https://explorer.mantle.xyz/tx/${txHash}` : null,
+    chainId: anchorChainInfo().chainId,
+    explorerTxUrl: txHash ? `${anchorChainInfo().explorer}/tx/${txHash}` : null,
   };
 }

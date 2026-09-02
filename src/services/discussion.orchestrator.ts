@@ -65,7 +65,10 @@ async function collectVote(
   const response = await requestFromAgent<VoteResponse>(
     agentName,
     "discussion:vote-request",
-    { sessionId, roomId, phase, transcript },
+    // timeoutMs lets the CLI skip executing a trade for a vote it produced after
+    // this window closed — past it we record the agent as an abstainer below, and
+    // a trade would open a real position the record denies.
+    { sessionId, roomId, phase, transcript, timeoutMs: config.discussionVoteTimeoutMs },
     config.discussionVoteTimeoutMs,
   );
 

@@ -34,6 +34,13 @@ export interface Strategy {
   body: string;
 }
 
+/** A settlement chain the CLI can select (wallet + funding rail). */
+export interface Chain {
+  id: string;
+  label: string;
+  network: "mainnet" | "testnet";
+}
+
 export interface NodeConfig {
   version: string;
   rooms: Room[];
@@ -42,5 +49,6 @@ export interface NodeConfig {
   providers: Provider[];
   platforms: Platform[];
   strategies: Strategy[];
+  chains: Chain[];
   defaults: NodeDefaults;
 }

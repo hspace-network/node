@@ -22,6 +22,9 @@ export function createServer(): NodeServer {
   app.use((req, res, next) => {
     const start = Date.now();
     res.on("finish", () => {
+      // Skip successful reads: GET polls (/floor, /config, /health) flood the
+      // log. Only mutations and error responses are worth a line.
+      if (req.method === "GET" && res.statusCode < 400) return;
       const ms = Date.now() - start;
       const addr = req.auth?.address;
       const authSuffix = addr ? ` addr=${addr.slice(0, 8)}…` : "";

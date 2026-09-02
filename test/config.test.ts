@@ -40,7 +40,7 @@ describe("GET /config", () => {
     expect(Array.isArray(res.body.platforms)).toBe(true);
     expect(Array.isArray(res.body.strategies)).toBe(true);
     expect(res.body.strategies.length).toBeGreaterThan(0);
-    expect(res.body.strategies.some((s) => s.id === "always-long")).toBe(true);
+    expect(res.body.strategies.some((s) => s.id === "technical-analysis")).toBe(true);
     expect(res.body.defaults.provider).toBeDefined();
   });
 

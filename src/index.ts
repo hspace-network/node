@@ -6,6 +6,15 @@ import { DiscussionSession } from "./db/discussion-session.model.js";
 import { startDiscussionScheduler } from "./services/discussion.scheduler.js";
 import { startAnchorScheduler } from "./services/anchor.scheduler.js";
 
+// Quiet mode for production: DEBUG=0 mutes the info chatter ([http],
+// [excellence], [discussion], [anchor], [socket] lines). Errors and warnings
+// still print. Leave DEBUG unset (or 1) for the verbose local view.
+if (process.env.DEBUG === "0" || process.env.DEBUG === "false") {
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+}
+
 async function main(): Promise<void> {
   assertProductionConfig();
   await connectMongo();
